@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Саркастичный Предсказатель</title>
+    <style>
+        /* ========================================
+           СБРОС СТИЛЕЙ И БАЗОВЫЕ НАСТРОЙКИ
+           ======================================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ========================================
+           ФОНОВЫЕ ЭФФЕКТЫ (СЕТКА И ГРАДИЕНТЫ)
+           ======================================== */
+        .background-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(138, 43, 226, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(138, 43, 226, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow-orb {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(138, 43, 226, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ========================================
+           ЗАГОЛОВОК
+           ======================================== */
+        .header {
+            text-align: center;
+            z-index: 1;
+            margin-bottom: 50px;
+            padding: 0 20px;
+        }
+
+        .header h1 {
+            color: #ffffff;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(138, 43, 226, 0.5),
+                         0 0 40px rgba(138, 43, 226, 0.3);
+            animation: titlePulse 3s ease-in-out infinite;
+        }
+
+        .header .subtitle {
+            color: #8a2be2;
+            font-size: 1rem;
+            margin-top: 10px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { text-shadow: 0 0 20px rgba(138, 43, 226, 0.5), 0 0 40px rgba(138, 43, 226, 0.3); }
+            50% { text-shadow: 0 0 30px rgba(138, 43, 226, 0.8), 0 0 60px rgba(138, 43, 226, 0.5); }
+        }
+
+        /* ========================================
+           КОНТЕЙНЕР МАГИЧЕСКОГО ШАРА
+           ======================================== */
+        .ball-container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        /* Магический шар */
+        .magic-ball {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #1a1a2e, #0f0f1e);
+            border: 3px solid #8a2be2;
+            box-shadow: 
+                0 0 30px rgba(138, 43, 226, 0.5),
+                0 0 60px rgba(138, 43, 226, 0.3),
+                inset 0 0 60px rgba(138, 43, 226, 0.2);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Внутренняя поверхность шара */
+        .magic-ball::before {
+            content: '';
+            position: absolute;
+            width: 90%;
+            height: 90%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(138, 43, 226, 0.1), transparent 60%);
+        }
+
+        /* Центральное "окно" шара */
+        .ball-window {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #00bfff, #0080ff);
+            box-shadow: 
+                0 0 30px rgba(0, 191, 255, 0.6),
+                inset 0 0 20px rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Звезда внутри шара */
+        .ball-window::before {
+            content: '★';
+            font-size: 3rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        /* Эффект при наведении */
+        .magic-ball:hover {
+            box-shadow: 
+                0 0 50px rgba(138, 43, 226, 0.8),
+                0 0 100px rgba(138, 43, 226, 0.4),
+                inset 0 0 60px rgba(138, 43, 226, 0.3);
+            transform: scale(1.05);
+        }
+
+        /* Эффект при нажатии */
+        .magic-ball:active {
+            transform: scale(0.98);
+        }
+
+        /* Анимация тряски */
+        .magic-ball.shaking {
+            animation: shake 1s ease-in-out;
+            cursor: not-allowed;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            10% { transform: translateX(-10px) rotate(-5deg); }
+            20% { transform: translateX(10px) rotate(5deg); }
+            30% { transform: translateX(-10px) rotate(-5deg); }
+            40% { transform: translateX(10px) rotate(5deg); }
+            50% { transform: translateX(-8px) rotate(-4deg); }
+            60% { transform: translateX(8px) rotate(4deg); }
+            70% { transform: translateX(-6px) rotate(-3deg); }
+            80% { transform: translateX(6px) rotate(3deg); }
+            90% { transform: translateX(-3px) rotate(-1deg); }
+        }
+
+        /* ========================================
+           КОНТЕЙНЕР ОТВЕТА
+           ======================================== */
+        .answer-container {
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            max-width: 550px;
+            padding: 0 20px;
+        }
+
+        .answer-text {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            font-weight: 300;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.8s ease, transform 0.8s ease, text-shadow 0.5s ease;
+        }
+
+        .answer-text.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ========================================
+           СТИЛИ ДЛЯ РАЗНЫХ ТИПОВ ОТВЕТОВ
+           ======================================== */
+        /* Саркастичные ДА - зеленоватый оттенок */
+        .answer-text.type-yes {
+            color: #7fffd4;
+            text-shadow: 0 0 15px rgba(127, 255, 212, 0.6),
+                         0 0 30px rgba(127, 255, 212, 0.4);
+        }
+
+        /* Саркастичные НЕТ - красноватый оттенок */
+        .answer-text.type-no {
+            color: #ff6b6b;
+            text-shadow: 0 0 15px rgba(255, 107, 107, 0.6),
+                         0 0 30px rgba(255, 107, 107, 0.4);
+        }
+
+        /* Уклончивые ответы - фиолетовый/синий (нейтральный) */
+        .answer-text.type-evasive {
+            color: #e0b0ff;
+            text-shadow: 0 0 15px rgba(224, 176, 255, 0.6),
+                         0 0 30px rgba(224, 176, 255, 0.4);
+        }
+
+        /* ========================================
+           СЧЕТЧИК ВОПРОСОВ
+           ======================================== */
+        .counter-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1;
+            text-align: center;
+        }
+
+        .counter-text {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            font-weight: 300;
+        }
+
+        .counter-number {
+            color: #8a2be2;
+            font-weight: 500;
+            text-shadow: 0 0 10px rgba(138, 43, 226, 0.5);
+        }
+
+        /* ========================================
+           ЧАСТИЦЫ (ИСКРЫ/КОНФЕТТИ)
+           ======================================== */
+        .particle {
+            position: absolute;
+            pointer-events: none;
+            border-radius: 50%;
+            animation: particleFade 1.5s ease-out forwards;
+        }
+
+        @keyframes particleFade {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) scale(0);
+            }
+        }
+
+        /* ========================================
+           АДАПТИВНОСТЬ
+           ======================================== */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+                letter-spacing: 1px;
+            }
+
+            .header .subtitle {
+                font-size: 0.8rem;
+                letter-spacing: 2px;
+            }
+
+            .magic-ball {
+                width: 200px;
+                height: 200px;
+            }
+
+            .ball-window {
+                width: 100px;
+                height: 100px;
+            }
+
+            .ball-window::before {
+                font-size: 2.5rem;
+            }
+
+            .answer-text {
+                font-size: 1.1rem;
+            }
+
+            .counter-text {
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.4rem;
+            }
+
+            .header .subtitle {
+                font-size: 0.7rem;
+            }
+
+            .magic-ball {
+                width: 180px;
+                height: 180px;
+            }
+
+            .ball-window {
+                width: 90px;
+                height: 90px;
+            }
+
+            .ball-window::before {
+                font-size: 2rem;
+            }
+
+            .answer-text {
+                font-size: 1rem;
+            }
+
+            .glow-orb {
+                width: 400px;
+                height: 400px;
+            }
+
+            .counter-container {
+                bottom: 20px;
+            }
+
+            .counter-text {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Фоновые элементы -->
+    <div class="background-grid"></div>
+    <div class="glow-orb"></div>
+
+    <!-- Заголовок -->
+    <header class="header">
+        <h1>Спроси у Вселенной</h1>
+        <p class="subtitle">(но она занята)</p>
+    </header>
+
+    <!-- Контейнер с магическим шаром -->
+    <div class="ball-container">
+        <!-- Магический шар (кнопка) -->
+        <div class="magic-ball" id="magicBall">
+            <div class="ball-window"></div>
+        </div>
+
+        <!-- Контейнер для ответа -->
+        <div class="answer-container">
+            <p class="answer-text" id="answerText"></p>
+        </div>
+    </div>
+
+    <!-- Счетчик вопросов -->
+    <div class="counter-container">
+        <p class="counter-text">
+            Вы спросили уже <span class="counter-number" id="questionCounter">0</span> раз
+        </p>
+    </div>
+
+    <script>
+        // ========================================
+        // ДАННЫЕ: КАТЕГОРИЗИРОВАННЫЕ ОТВЕТЫ
+        // ========================================
+        
+        // Саркастичные ДА (зеленоватый)
+        const answersYes = [
+            { text: "О да, наконец-то ты угадал! 🎉", type: "yes" },
+            { text: "Звезды сошлись, не верю сам! ✨", type: "yes" },
+            { text: "Да, но только если сегодня вторник 📅", type: "yes" },
+            { text: "Безусловно! (нет) 😏", type: "yes" },
+            { text: "Да, и кот это подтверждает 🐱", type: "yes" }
+        ];
+
+        // Саркастичные НЕТ (красноватый)
+        const answersNo = [
+            { text: "Даже не надейся 🙅", type: "no" },
+            { text: "Спроси у мамы, она знает лучше 🤷", type: "no" },
+            { text: "Шансы 50 на 50, но скорее нет 📉", type: "no" },
+            { text: "Определенно нет, но ты продолжай пытаться 💪", type: "no" },
+            { text: "Лучше не спрашивай 🤐", type: "no" }
+        ];
+
+        // Уклончивые / Забавные (нейтральный фиолетовый)
+        const answersEvasive = [
+            { text: "Перезагрузи вселенную и попробуй снова 🔄", type: "evasive" },
+            { text: "Мне лень думать об этом 😴", type: "evasive" },
+            { text: "Звезды говорят, что ты слишком много спрашиваешь 🔮", type: "evasive" },
+            { text: "Попробуй позже, когда я высплюсь 💤", type: "evasive" },
+            { text: "Ответ есть, но ты его не поймешь 🧠", type: "evasive" },
+            { text: "Спроси снова, я не слушал 👂", type: "evasive" },
+            { text: "Возможно... а может и нет 🤔", type: "evasive" }
+        ];
+
+        // Объединяем все ответы в один массив
+        const allAnswers = [...answersYes, ...answersNo, ...answersEvasive];
+
+        // ========================================
+        // ЭЛЕМЕНТЫ DOM
+        // ========================================
+        const magicBall = document.getElementById('magicBall');
+        const answerText = document.getElementById('answerText');
+        const questionCounter = document.getElementById('questionCounter');
+
+        // ========================================
+        // СОСТОЯНИЕ ПРИЛОЖЕНИЯ
+        // ========================================
+        let isAnimating = false;
+        let questionCount = 0;
+
+        // ========================================
+        // ФУНКЦИЯ: Генерация случайного ответа
+        // ========================================
+        function getRandomAnswer() {
+            const randomIndex = Math.floor(Math.random() * allAnswers.length);
+            return allAnswers[randomIndex];
+        }
+
+        // ========================================
+        // ФУНКЦИЯ: Обновление счетчика
+        // ========================================
+        function updateCounter() {
+            questionCount++;
+            questionCounter.textContent = questionCount;
+            
+            // Анимация пульсации счетчика
+            questionCounter.style.transform = 'scale(1.3)';
+            questionCounter.style.transition = 'transform 0.2s ease';
+            setTimeout(() => {
+                questionCounter.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        // ========================================
+        // ФУНКЦИЯ: Установка стиля ответа
+        // ========================================
+        function setAnswerStyle(type) {
+            // Удаляем все классы типов
+            answerText.classList.remove('type-yes', 'type-no', 'type-evasive');
+            
+            // Добавляем нужный класс
+            answerText.classList.add(`type-${type}`);
+        }
+
+        // ========================================
+        // ФУНКЦИЯ: Создание частиц (искр)
+        // ========================================
+        function createParticles(x, y) {
+            const colors = ['#8a2be2', '#00bfff', '#ffffff', '#ff00ff', '#00ffff', '#7fffd4', '#ff6b6b'];
+            const particleCount = 30;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // Случайные параметры частицы
+                const size = Math.random() * 8 + 4;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const angle = (Math.PI * 2 * i) / particleCount + Math.random() * 0.5;
+                const velocity = Math.random() * 150 + 50;
+                const tx = Math.cos(angle) * velocity;
+                const ty = Math.sin(angle) * velocity;
+
+                // Применяем стили
+                particle.style.cssText = `
+                    width: ${size}px;
+                    height: ${size}px;
+                    background: ${color};
+                    left: ${x}px;
+                    top: ${y}px;
+                    box-shadow: 0 0 ${size}px ${color};
+                    --tx: ${tx}px;
+                    --ty: ${ty}px;
+                `;
+
+                // Добавляем частицу на страницу
+                document.body.appendChild(particle);
+
+                // Удаляем частицу после завершения анимации
+                setTimeout(() => {
+                    particle.remove();
+                }, 1500);
+            }
+        }
+
+        // ========================================
+        // ФУНКЦИЯ: Обработка клика по шару
+        // ========================================
+        function handleBallClick(event) {
+            // Если анимация уже идет - игнорируем клик
+            if (isAnimating) {
+                return;
+            }
+
+            // Устанавливаем флаг анимации
+            isAnimating = true;
+
+            // Обновляем счетчик вопросов
+            updateCounter();
+
+            // Получаем координаты центра шара для частиц
+            const rect = magicBall.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            // Скрываем предыдущий ответ
+            answerText.classList.remove('show');
+
+            // Запускаем анимацию тряски
+            magicBall.classList.add('shaking');
+
+            // Ждем окончания анимации тряски (1 секунда)
+            setTimeout(() => {
+                // Убираем класс тряски
+                magicBall.classList.remove('shaking');
+
+                // Получаем случайный ответ с типом
+                const answer = getRandomAnswer();
+
+                // Устанавливаем текст ответа
+                answerText.textContent = answer.text;
+
+                // Устанавливаем стиль в зависимости от типа ответа
+                setAnswerStyle(answer.type);
+
+                // Показываем ответ с плавным появлением
+                answerText.classList.add('show');
+
+                // Создаем эффект частиц
+                createParticles(centerX, centerY);
+
+                // Сбрасываем флаг анимации
+                isAnimating = false;
+            }, 1000);
+        }
+
+        // ========================================
+        // ИНИЦИАЛИЗАЦИЯ: Привязка событий
+        // ========================================
+        magicBall.addEventListener('click', handleBallClick);
+
+        // Также обрабатываем нажатие клавиши Enter/Space когда шар в фокусе
+        magicBall.setAttribute('tabindex', '0');
+        magicBall.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleBallClick(event);
+            }
+        });
+    </script>
+</body>
+</html>
